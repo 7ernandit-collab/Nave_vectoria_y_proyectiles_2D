@@ -5,3 +5,10 @@ Realizar una simulación interactiva en 2D que dibuja en pantalla una nave espac
 nave-vectorial/
 ├── index.html          ← el juego completo
 └── README.md           ← (opcional)
+
+
+```text
+nave-vectorial/
+├── index.html          ← el juego completo
+└── README.md           ← (opcional)  
+```
