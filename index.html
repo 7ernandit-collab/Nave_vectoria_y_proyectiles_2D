@@ -1,251 +1,220 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nave vectorial y proyectiles 2D</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #05050c;
-      font-family: system-ui, -apple-system, sans-serif;
-      color: #c8d0d8;
-    }
-    #canvas {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      display: block;
-      background: #0a0a14;
-    }
-    #ui {
-      position: fixed;
-      top: 18px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      z-index: 10;
-      pointer-events: none;
-    }
-    h1 {
-      font-size: 1.55rem;
-      font-weight: 600;
-      color: #50ff96;
-      letter-spacing: 1.5px;
-      text-shadow: 0 0 18px rgba(80, 255, 150, 0.45);
-    }
-    .controls {
-      position: fixed;
-      bottom: 18px;
-      left: 0;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 18px;
-      z-index: 10;
-      pointer-events: none;
-      font-size: 0.88rem;
-      color: #8a9aaa;
-    }
-    .controls span {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .controls kbd {
-      background: rgba(20, 24, 36, 0.85);
-      border: 1px solid #3a4555;
-      border-radius: 4px;
-      padding: 2px 7px;
-      font-family: monospace;
-      color: #50ff96;
-      font-size: 0.82rem;
-      box-shadow: 0 0 8px rgba(80, 255, 150, 0.12);
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nave vectorial y proyectiles 2D</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a12;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: #ccc;
+  }
+  h1 {
+    margin-bottom: 12px;
+    font-size: 1.4rem;
+    color: #50ff96;
+    letter-spacing: 1px;
+  }
+  #game-container {
+    position: relative;
+    border: 2px solid #2a3a4a;
+    border-radius: 6px;
+    box-shadow: 0 0 30px rgba(80, 255, 150, 0.15);
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    background: #191923;
+  }
+  .controls {
+    margin-top: 14px;
+    font-size: 0.85rem;
+    color: #8899aa;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .controls kbd {
+    background: #222;
+    border: 1px solid #444;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-family: monospace;
+    color: #50ff96;
+  }
+</style>
 </head>
 <body>
-  <div id="ui">
-    <h1>Nave vectorial y proyectiles 2D</h1>
+  <h1>Nave vectorial y proyectiles 2D</h1>
+  <div id="game-container">
+    <canvas id="canvas" width="800" height="600"></canvas>
   </div>
-
-  <canvas id="canvas"></canvas>
-
   <div class="controls">
-    <span><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> girar</span>
-    <span><kbd>W</kbd> / <kbd>↑</kbd> avanzar</span>
-    <span><kbd>S</kbd> / <kbd>↓</kbd> retroceder</span>
-    <span><kbd>Espacio</kbd> disparar</span>
+    <kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> girar &nbsp;|&nbsp;
+    <kbd>W</kbd> / <kbd>↑</kbd> avanzar &nbsp;|&nbsp;
+    <kbd>S</kbd> / <kbd>↓</kbd> retroceder &nbsp;|&nbsp;
+    <kbd>Espacio</kbd> disparar
   </div>
 
-  <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const ANCHO = 800, ALTO = 600;
 
-    let ANCHO, ALTO;
-
-    function resize() {
-      ANCHO = window.innerWidth;
-      ALTO = window.innerHeight;
-      canvas.width = ANCHO;
-      canvas.height = ALTO;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    function crearEstrellas() {
-      const estrellas = [];
-      const cantidad = Math.floor((ANCHO * ALTO) / 3500);
-      for (let i = 0; i < cantidad; i++) {
-        estrellas.push({
-          x: Math.random() * ANCHO,
-          y: Math.random() * ALTO,
-          r: Math.random() * 1.6 + 0.2,
-          a: Math.random() * 0.7 + 0.25,
-          velocidad: Math.random() * 0.15 + 0.02
-        });
-      }
-      return estrellas;
-    }
-
-    let estrellas = crearEstrellas();
-    window.addEventListener('resize', () => { estrellas = crearEstrellas(); });
-
-    function dibujarFondo() {
-      const grad = ctx.createRadialGradient(
-        ANCHO / 2, ALTO / 2, 0,
-        ANCHO / 2, ALTO / 2, Math.max(ANCHO, ALTO) * 0.7
-      );
-      grad.addColorStop(0, '#12122a');
-      grad.addColorStop(0.6, '#0b0b18');
-      grad.addColorStop(1, '#05050c');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, ANCHO, ALTO);
-
-      for (const e of estrellas) {
-        e.y += e.velocidad;
-        if (e.y > ALTO) {
-          e.y = 0;
-          e.x = Math.random() * ANCHO;
-        }
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(220, 230, 255, ${e.a})`;
-        ctx.fill();
-      }
-    }
-
-    const modeloTriangulo = [[0, -26], [-17, 18], [17, 18]];
-
-    let posX = 0, posY = 0, angulo = 0;
-    const escala = 1.6;
-    const VELOCIDAD_NAVE = 280;
-    const VELOCIDAD_GIRO = 200;
-    const VELOCIDAD_PROYECTIL = 520;
-    const COOLDOWN_DISPARO = 220;
-    const VIDA_PROYECTIL = 1600;
-
-    let proyectiles = [];
-    let ultimoDisparo = -COOLDOWN_DISPARO;
-    const teclas = {};
-
-    function centrarNave() {
-      posX = ANCHO / 2;
-      posY = ALTO / 2;
-    }
-    centrarNave();
-    window.addEventListener('resize', centrarNave);
-
-    window.addEventListener('keydown', (e) => {
-      teclas[e.code] = true;
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+// Fondo de estrellas (se genera automáticamente)
+function crearEstrellas() {
+  const estrellas = [];
+  for (let i = 0; i < 220; i++) {
+    estrellas.push({
+      x: Math.random() * ANCHO,
+      y: Math.random() * ALTO,
+      r: Math.random() * 1.5 + 0.3,
+      a: Math.random() * 0.7 + 0.3
     });
-    window.addEventListener('keyup', (e) => { teclas[e.code] = false; });
+  }
+  return estrellas;
+}
+const estrellas = crearEstrellas();
 
-    function transformarVertice(vertice, px, py, esc, ang) {
-      let [x, y] = vertice;
-      x *= esc; y *= esc;
-      const rad = ang * Math.PI / 180;
-      const cos = Math.cos(rad), sin = Math.sin(rad);
-      return [x * cos - y * sin + px, x * sin + y * cos + py];
-    }
+function dibujarFondo() {
+  // Fondo oscuro con gradiente
+  const grad = ctx.createRadialGradient(ANCHO/2, ALTO/2, 0, ANCHO/2, ALTO/2, 500);
+  grad.addColorStop(0, '#1a1a2e');
+  grad.addColorStop(1, '#0a0a14');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, ANCHO, ALTO);
 
-    let lastTime = performance.now();
+  // Estrellas
+  for (const e of estrellas) {
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(220, 230, 255, ${e.a})`;
+    ctx.fill();
+  }
+}
 
-    function gameLoop(now) {
-      const dt = Math.min((now - lastTime) / 1000, 0.05);
-      lastTime = now;
+// Modelo de la nave
+const modeloTriangulo = [[0, -25], [-18, 18], [18, 18]];
 
-      if (teclas['ArrowLeft'] || teclas['KeyA']) angulo -= VELOCIDAD_GIRO * dt;
-      if (teclas['ArrowRight'] || teclas['KeyD']) angulo += VELOCIDAD_GIRO * dt;
+// Estado
+let posX = 400, posY = 300, angulo = 0;
+const escala = 1.5;
 
-      const rad = angulo * Math.PI / 180;
+const VELOCIDAD_NAVE = 220;
+const VELOCIDAD_GIRO = 180;
+const VELOCIDAD_PROYECTIL = 420;
+const COOLDOWN_DISPARO = 250;
+const VIDA_PROYECTIL = 1800;
 
-      if (teclas['KeyW'] || teclas['ArrowUp']) {
-        posX += Math.sin(rad) * VELOCIDAD_NAVE * dt;
-        posY -= Math.cos(rad) * VELOCIDAD_NAVE * dt;
-      }
-      if (teclas['KeyS'] || teclas['ArrowDown']) {
-        posX -= Math.sin(rad) * VELOCIDAD_NAVE * dt;
-        posY += Math.cos(rad) * VELOCIDAD_NAVE * dt;
-      }
+let proyectiles = [];
+let ultimoDisparo = -COOLDOWN_DISPARO;
+const teclas = {};
 
-      if (teclas['Space'] && now - ultimoDisparo >= COOLDOWN_DISPARO) {
-        const [puntaX, puntaY] = transformarVertice(modeloTriangulo[0], posX, posY, escala, angulo);
-        proyectiles.push({
-          x: puntaX, y: puntaY,
-          vx: Math.sin(rad) * VELOCIDAD_PROYECTIL,
-          vy: -Math.cos(rad) * VELOCIDAD_PROYECTIL,
-          vida: VIDA_PROYECTIL
-        });
-        ultimoDisparo = now;
-      }
+// Teclado
+window.addEventListener('keydown', e => {
+  teclas[e.code] = true;
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) {
+    e.preventDefault();
+  }
+});
+window.addEventListener('keyup', e => {
+  teclas[e.code] = false;
+});
 
-      for (const p of proyectiles) {
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vida -= dt * 1000;
-      }
-      proyectiles = proyectiles.filter(p =>
-        p.x >= -20 && p.x < ANCHO + 20 && p.y >= -20 && p.y < ALTO + 20 && p.vida > 0
-      );
+// Transformación 2D
+function transformarVertice(vertice, px, py, esc, ang) {
+  let [x, y] = vertice;
+  x *= esc;
+  y *= esc;
+  const rad = ang * Math.PI / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  return [x * cos - y * sin + px, x * sin + y * cos + py];
+}
 
-      posX = ((posX % ANCHO) + ANCHO) % ANCHO;
-      posY = ((posY % ALTO) + ALTO) % ALTO;
+// Bucle principal
+let lastTime = performance.now();
 
-      dibujarFondo();
+function gameLoop(now) {
+  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
 
-      const vertices = modeloTriangulo.map(v => transformarVertice(v, posX, posY, escala, angulo));
-      ctx.beginPath();
-      ctx.moveTo(vertices[0][0], vertices[0][1]);
-      for (let i = 1; i < vertices.length; i++) ctx.lineTo(vertices[i][0], vertices[i][1]);
-      ctx.closePath();
-      ctx.shadowColor = 'rgba(80, 255, 150, 0.55)';
-      ctx.shadowBlur = 12;
-      ctx.strokeStyle = '#50ff96';
-      ctx.lineWidth = 2.4;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
+  // Giro
+  if (teclas['ArrowLeft'] || teclas['KeyA']) angulo -= VELOCIDAD_GIRO * dt;
+  if (teclas['ArrowRight'] || teclas['KeyD']) angulo += VELOCIDAD_GIRO * dt;
 
-      for (const p of proyectiles) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 3.8, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffdc50';
-        ctx.shadowColor = 'rgba(255, 220, 80, 0.7)';
-        ctx.shadowBlur = 8;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      }
+  const rad = angulo * Math.PI / 180;
 
-      requestAnimationFrame(gameLoop);
-    }
+  // Movimiento
+  if (teclas['KeyW'] || teclas['ArrowUp']) {
+    posX += Math.sin(rad) * VELOCIDAD_NAVE * dt;
+    posY -= Math.cos(rad) * VELOCIDAD_NAVE * dt;
+  }
+  if (teclas['KeyS'] || teclas['ArrowDown']) {
+    posX -= Math.sin(rad) * VELOCIDAD_NAVE * dt;
+    posY += Math.cos(rad) * VELOCIDAD_NAVE * dt;
+  }
 
-    requestAnimationFrame(gameLoop);
-  </script>
+  // Disparo
+  if (teclas['Space'] && now - ultimoDisparo >= COOLDOWN_DISPARO) {
+    const [puntaX, puntaY] = transformarVertice(modeloTriangulo[0], posX, posY, escala, angulo);
+    proyectiles.push({
+      x: puntaX,
+      y: puntaY,
+      vx: Math.sin(rad) * VELOCIDAD_PROYECTIL,
+      vy: -Math.cos(rad) * VELOCIDAD_PROYECTIL,
+      vida: VIDA_PROYECTIL
+    });
+    ultimoDisparo = now;
+  }
+
+  // Actualizar proyectiles
+  for (const p of proyectiles) {
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vida -= dt * 1000;
+  }
+  proyectiles = proyectiles.filter(p =>
+    p.x >= 0 && p.x < ANCHO && p.y >= 0 && p.y < ALTO && p.vida > 0
+  );
+
+  // Pantalla envolvente
+  posX = ((posX % ANCHO) + ANCHO) % ANCHO;
+  posY = ((posY % ALTO) + ALTO) % ALTO;
+
+  // Dibujar
+  dibujarFondo();
+
+  // Nave
+  const vertices = modeloTriangulo.map(v => transformarVertice(v, posX, posY, escala, angulo));
+  ctx.beginPath();
+  ctx.moveTo(vertices[0][0], vertices[0][1]);
+  for (let i = 1; i < vertices.length; i++) {
+    ctx.lineTo(vertices[i][0], vertices[i][1]);
+  }
+  ctx.closePath();
+  ctx.strokeStyle = '#50ff96';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Proyectiles
+  ctx.fillStyle = '#ffdc50';
+  for (const p of proyectiles) {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+requestAnimationFrame(gameLoop);
+</script>
 </body>
 </html>
