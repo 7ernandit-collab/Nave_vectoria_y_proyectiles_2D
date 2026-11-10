@@ -68,37 +68,8 @@ const ctx = canvas.getContext('2d');
 const ANCHO = 800, ALTO = 600;
 
 // Fondo de estrellas (se genera automáticamente)
-function crearEstrellas() {
-  const estrellas = [];
-  for (let i = 0; i < 220; i++) {
-    estrellas.push({
-      x: Math.random() * ANCHO,
-      y: Math.random() * ALTO,
-      r: Math.random() * 1.5 + 0.3,
-      a: Math.random() * 0.7 + 0.3
-    });
-  }
-  return estrellas;
-}
-const estrellas = crearEstrellas();
-
-function dibujarFondo() {
-  // Fondo oscuro con gradiente
-  const grad = ctx.createRadialGradient(ANCHO/2, ALTO/2, 0, ANCHO/2, ALTO/2, 500);
-  grad.addColorStop(0, '#1a1a2e');
-  grad.addColorStop(1, '#0a0a14');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, ANCHO, ALTO);
-
-  // Estrellas
-  for (const e of estrellas) {
-    ctx.beginPath();
-    ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(220, 230, 255, ${e.a})`;
-    ctx.fill();
-  }
-}
-
+const fondoImg = new Image();
+fondoImg.src = "estrellas.jpg";
 // Modelo de la nave
 const modeloTriangulo = [[0, -25], [-18, 18], [18, 18]];
 
